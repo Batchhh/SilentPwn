@@ -190,48 +190,29 @@
   return sharedInstance;
 }
 - (UIWindow *)getWindow {
-    __block UIWindow *targetWindow = nil;
+    __block UIWindow *mainWindow = nil;
     if ([NSThread isMainThread]) {
-        targetWindow = [self findKeyWindow];
+        mainWindow = [self findKeyWindow];
     } else {
         dispatch_sync(dispatch_get_main_queue(), ^{
-            targetWindow = [self findKeyWindow];
+            mainWindow = [self findKeyWindow];
         });
     }
-    return targetWindow;
+
+    return mainWindow;
 }
-
 - (UIWindow *)findKeyWindow {
-    UIWindow *keyWindow = nil;
-
-    if (@available(iOS 15.0, *)) {
-        NSSet<UIScene *> *connectedScenes = UIApplication.sharedApplication.connectedScenes;
-        for (UIScene *scene in connectedScenes) {
-            if ([scene isKindOfClass:[UIWindowScene class]]) {
-                UIWindowScene *windowScene = (UIWindowScene *)scene;
-                for (UIWindow *window in windowScene.windows) {
-                    if (window.isKeyWindow) {
-                        keyWindow = window;
-                        break;
-                    }
+    for (UIScene *scene in [UIApplication sharedApplication].connectedScenes) {
+        if ([scene isKindOfClass:[UIWindowScene class]]) {
+            UIWindowScene *windowScene = (UIWindowScene *)scene;
+            for (UIWindow *window in windowScene.windows) {
+                if (window.isKeyWindow) {
+                    return window;
                 }
-                if (keyWindow) break;
             }
         }
-    } else if (@available(iOS 13.0, *)) {
-        NSSet<UIScene *> *connectedScenes = UIApplication.sharedApplication.connectedScenes;
-        for (UIScene *scene in connectedScenes) {
-            if ([scene isKindOfClass:[UIWindowScene class]]) {
-                UIWindowScene *windowScene = (UIWindowScene *)scene;
-                keyWindow = windowScene.windows.firstObject;
-                if (keyWindow) break;
-            }
-        }
-    } else {
-        keyWindow = [UIApplication.sharedApplication.delegate window];
     }
-
-    return keyWindow;
+    return nil;
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
