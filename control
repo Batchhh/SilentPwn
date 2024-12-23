@@ -1,0 +1,10 @@
+Package: @@PACKAGENAME@@
+Name: @@APPNAME@@ Mod Menu @@APPVERSION@@ - @@USER@@ for iOSGods.com
+Version: @@APPVERSION@@
+Architecture: iphoneos-arm
+Description: Enhance your gaming experience with this feature-rich mod menu for @@APPNAME@@. Unlock new possibilities and enjoy customized gameplay! This mod menu is designed for iOSGods.com users.
+Maintainer: Batchh (https://iosgods.com/profile/10738750-batchh/)
+Author: @@USER@@
+Section: Tweaks
+Depends: mobilesubstrate
+Homepage: iOSGods.com
