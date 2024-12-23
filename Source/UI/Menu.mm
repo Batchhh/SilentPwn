@@ -216,12 +216,9 @@
 }
 
 - (instancetype)initWithFrame:(CGRect)frame {
+    UIWindow *window = [self getWindow];
     self = [super initWithFrame:frame];
     if (self) {
-        UIWindow *window = [self getWindow];
-        if (window) {
-            [window addSubview:self];
-        }
         self.backgroundColor = [UIColor clearColor];
         self.categorySettings = [NSMutableDictionary dictionary];
         self.settingValues = [NSMutableDictionary dictionary];
@@ -245,6 +242,7 @@
         self.debugLogs = [NSMutableArray array];
         self.categoryIcons = [NSMutableDictionary dictionary];
     }
+    [window addSubview:self];
     return self;
 }
 - (void)setupHubButton {
