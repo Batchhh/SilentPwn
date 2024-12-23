@@ -189,46 +189,82 @@
   });
   return sharedInstance;
 }
-UIWindow *getWindow() {
-  for (UIScene *scene in UIApplication.sharedApplication.connectedScenes) {
-    if ([scene isKindOfClass:[UIWindowScene class]]) {
-      UIWindowScene *windowScene = (UIWindowScene *)scene;
-      if (windowScene.keyWindow != nil) {
-        return windowScene.keyWindow;
-      }
+- (UIWindow *)getWindow {
+    __block UIWindow *targetWindow = nil;
+    if ([NSThread isMainThread]) {
+        targetWindow = [self findKeyWindow];
+    } else {
+        dispatch_sync(dispatch_get_main_queue(), ^{
+            targetWindow = [self findKeyWindow];
+        });
     }
-  }
-  return nil;
+    return targetWindow;
 }
+
+- (UIWindow *)findKeyWindow {
+    UIWindow *keyWindow = nil;
+
+    if (@available(iOS 15.0, *)) {
+        NSSet<UIScene *> *connectedScenes = UIApplication.sharedApplication.connectedScenes;
+        for (UIScene *scene in connectedScenes) {
+            if ([scene isKindOfClass:[UIWindowScene class]]) {
+                UIWindowScene *windowScene = (UIWindowScene *)scene;
+                for (UIWindow *window in windowScene.windows) {
+                    if (window.isKeyWindow) {
+                        keyWindow = window;
+                        break;
+                    }
+                }
+                if (keyWindow) break;
+            }
+        }
+    } else if (@available(iOS 13.0, *)) {
+        NSSet<UIScene *> *connectedScenes = UIApplication.sharedApplication.connectedScenes;
+        for (UIScene *scene in connectedScenes) {
+            if ([scene isKindOfClass:[UIWindowScene class]]) {
+                UIWindowScene *windowScene = (UIWindowScene *)scene;
+                keyWindow = windowScene.windows.firstObject;
+                if (keyWindow) break;
+            }
+        }
+    } else {
+        keyWindow = [UIApplication.sharedApplication.delegate window];
+    }
+
+    return keyWindow;
+}
+
 - (instancetype)initWithFrame:(CGRect)frame {
-  self = [super initWithFrame:frame];
-  if (self) {
-    self.backgroundColor = [UIColor clearColor];
-    self.categorySettings = [NSMutableDictionary dictionary];
-    self.settingValues = [NSMutableDictionary dictionary];
-    self.maxVisibleOptions = 3;
-    [self setupHubButton];
-    [self setupCategoryButtons];
-    self.isOpen = NO;
-    self.userInteractionEnabled = YES;
-    self.opaque = NO;
-    [self performSelector:@selector(performLaunchAnimation)
-               withObject:nil
-               afterDelay:1.0];
-    self.tapGestureKeyboard = [[UITapGestureRecognizer alloc]
-        initWithTarget:self
-                action:@selector(dismissKeyboard)];
-    self.tapGestureKeyboard.enabled = NO;
-    [self addGestureRecognizer:self.tapGestureKeyboard];
-    [self setupThemes];
-    self.currentTheme = ModMenuThemeDark;
-    [self startInactivityTimer];
-    self.debugLogs = [NSMutableArray array];
-    self.categoryIcons = [NSMutableDictionary dictionary];
-    UIWindow *window = getWindow();
-    [window addSubview:self];
-  }
-  return self;
+    self = [super initWithFrame:frame];
+    if (self) {
+        UIWindow *window = [self getWindow];
+        if (window) {
+            [window addSubview:self];
+        }
+        self.backgroundColor = [UIColor clearColor];
+        self.categorySettings = [NSMutableDictionary dictionary];
+        self.settingValues = [NSMutableDictionary dictionary];
+        self.maxVisibleOptions = 3;
+        [self setupHubButton];
+        [self setupCategoryButtons];
+        self.isOpen = NO;
+        self.userInteractionEnabled = YES;
+        self.opaque = NO;
+        [self performSelector:@selector(performLaunchAnimation)
+                   withObject:nil
+                   afterDelay:1.0];
+        self.tapGestureKeyboard = [[UITapGestureRecognizer alloc]
+            initWithTarget:self
+                    action:@selector(dismissKeyboard)];
+        self.tapGestureKeyboard.enabled = NO;
+        [self addGestureRecognizer:self.tapGestureKeyboard];
+        [self setupThemes];
+        self.currentTheme = ModMenuThemeDark;
+        [self startInactivityTimer];
+        self.debugLogs = [NSMutableArray array];
+        self.categoryIcons = [NSMutableDictionary dictionary];
+    }
+    return self;
 }
 - (void)setupHubButton {
   _hubButton = [[ModMenuButton alloc] initWithFrame:CGRectMake(0, 0, 60, 60)];
