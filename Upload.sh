@@ -10,7 +10,7 @@ scp packages/com.* mobile@$IP:~ # Upload package
 printf "\033[34m[SilentPwn]\033[0m Upload complete.\n"
 printf "\033[34m[SilentPwn]\033[0m Do you want to install the package? (y/n): "
 read -r install_choice
-if [ "$install_choice" = "y" ] || [ "$install_choice" = "Y" ]; then
+if [ "$install_choice" = "y" ] || [ "$install_choice" = "Y" ]; then # install & respring
     printf "\033[34m[SilentPwn]\033[0m Enter sudo password: "
     read -s password
     printf "\n\033[34m[SilentPwn]\033[0m Installing package...\n"

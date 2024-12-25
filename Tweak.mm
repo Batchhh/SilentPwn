@@ -19,7 +19,7 @@
 Obfuscation
 NSStringEncrypt - Compile-time string encryption macro
 NSNumberEncrypt - Compile-time NSNumber encryption macro
-IGSecretHexInt - Compile-time offset string encryption macro
+IGSecretHexInt - Compile-time int string encryption macro
 IGSecretHexNumber - Compile-time NSNumber hex string encryption macro
 IGSecretHexData - Compile-time hex string encryption macro
 */
