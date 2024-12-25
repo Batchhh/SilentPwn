@@ -96,7 +96,7 @@ typedef NS_ENUM(NSInteger, ModMenuTheme) {
 - (void)toggleMenu;
 - (void)updateCategoryButtonPositions;
 
-// New methods for settings
+
 - (void)addSlider:(NSString *)title
      initialValue:(float)value
          minValue:(float)min
@@ -106,7 +106,6 @@ typedef NS_ENUM(NSInteger, ModMenuTheme) {
      initialValue:(BOOL)value
       forCategory:(NSInteger)category;
 
-// New methods for retrieving values
 - (float)getSliderValueFloat:(NSInteger)category
                          withTitle:(NSString *)title;
 - (BOOL)getToggleValue:(NSInteger)category
@@ -114,7 +113,6 @@ typedef NS_ENUM(NSInteger, ModMenuTheme) {
 - (NSInteger)getSliderValueInt:(NSInteger)category
                                 withTitle:(NSString *)title;
 
-// New methods for text input and index switch
 - (void)addTextInput:(NSString *)title
         initialValue:(NSString *)value
          forCategory:(NSInteger)category;
@@ -141,7 +139,6 @@ typedef NS_ENUM(NSInteger, ModMenuTheme) {
            duration:(NSTimeInterval)duration
             credits:(NSString *)credits;
 
-// Add these new method declarations
 - (void)addStepper:(NSString *)title
       initialValue:(double)value
           minValue:(double)min
@@ -157,7 +154,6 @@ typedef NS_ENUM(NSInteger, ModMenuTheme) {
 - (NSArray<NSNumber *> *)getMultiSelectValuesForCategory:(NSInteger)category
                                                withTitle:(NSString *)title;
 
-// Add these methods to retrieve stepper values
 - (double)getStepperValueDouble:(NSInteger)category
                            withTitle:(NSString *)title;
 - (NSInteger)getStepperIntValue:(NSInteger)category
@@ -165,19 +161,16 @@ typedef NS_ENUM(NSInteger, ModMenuTheme) {
 - (float)getStepperFloatValue:(NSInteger)category
                                withTitle:(NSString *)title;
 
-// Add method to switch layouts
 - (void)switchTo:(ModMenuLayout)layout animated:(BOOL)animated;
 
-// Add theme methods
 - (void)setTheme:(ModMenuTheme)theme animated:(BOOL)animated;
 
-// Add quick action methods
 - (void)addQuickAction:(NSString *)title
                   icon:(NSString *)iconName
                 action:(void (^)(void))action;
 - (void)showQuickActionsMenu;
 
-// Add these new methods
+
 - (BOOL)isOptionSelected:(NSString *)option
            inMultiSelect:(NSString *)title
              forCategory:(NSInteger)category;
@@ -191,17 +184,14 @@ typedef NS_ENUM(NSInteger, ModMenuTheme) {
 - (void)clearDebugLogs;
 - (void)showDebugConsole;
 
-// Add these new methods
 - (void)addCallback:(void (^)(id))callback forKey:(NSString *)key;
 - (void)resetPosition;
 - (void)previewCurrentLayout;
 - (NSString *)keyForSetting:(NSString *)title inCategory:(NSInteger)category;
 
-// Add these method declarations if not already present
 - (void)segmentedControlValueChanged:(UISegmentedControl *)segmentedControl;
 - (void)sliderValueChanged:(UISlider *)slider;
 
-// Add this method declaration
 - (UIView *)viewForCategory:(NSInteger)category;
 - (void)showQuickMessage:(NSString *)message;
 
@@ -211,7 +201,7 @@ typedef NS_ENUM(NSInteger, ModMenuTheme) {
                    title:(NSString *)title
                     icon:(NSString *)iconName;
 
-// Add this method declaration
+
 - (void)showAlert:(NSString *)message
             title:(NSString *)title
          okButton:(NSString *)okTitle
@@ -224,25 +214,21 @@ typedef NS_ENUM(NSInteger, ModMenuTheme) {
 - (void)togglePatch:(NSInteger)index enabled:(BOOL)enabled;
 - (void)deletePatch:(NSInteger)index;
 
-// Add these method declarations
+
 - (UITextField *)createStylizedTextField:(CGRect)frame
                              placeholder:(NSString *)placeholder;
 - (UIButton *)createStylizedButton:(CGRect)frame title:(NSString *)title;
 
 - (NSString *)getTextValue:(NSInteger)index withTitle:(NSString *)title;
 
-// Timer and system methods
 - (void)startInactivityTimer;
 - (void)updateButtonSizes:(CGFloat)size;
 
-// UI update methods
 - (void)updatePopupColors:(NSDictionary *)colors;
 - (void)handleHubLongPress:(UILongPressGestureRecognizer *)gesture;
 
-// Add this method declaration to the @interface ModMenu section
 - (CGPoint)constrainPointToBounds:(CGPoint)point forView:(UIView *)view;
 
-// Add these method declarations
 - (void)updatePatchList:(UIScrollView *)scrollView;
 - (void)addPatchView:(NSDictionary *)patch
         toScrollView:(UIScrollView *)scrollView
@@ -255,7 +241,6 @@ typedef NS_ENUM(NSInteger, ModMenuTheme) {
            forCategory:(NSInteger)category
               withAsm:(BOOL)withAsm;
 
-// Add default options
 - (void)addDefaultOptions:(BOOL)developerMode;
 - (void)createMessage:(NSString *)message;
 
