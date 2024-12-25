@@ -37,6 +37,7 @@ void il2cpp() {
 }
 
 void hooks() {
+
   // This section will be used to add hooks to the game
 
   /**
@@ -189,7 +190,8 @@ void patches() {
   /**
    * Applies a dictionary of patches to the game.
    *
-   * @param patches The dictionary of patches to apply. NSDictionary<NSNumber*,NSString *> *.
+   * @param patches The dictionary of patches to apply.
+   * NSDictionary<NSNumber*,NSString *> *.
    *
    * Example:
    * NSDictionary *patches = @{
@@ -312,7 +314,7 @@ void setupOptions(ModMenu *menu) {
            forCategory:0
                withAsm:NO];
 
-[menu addTogglePatch:@"canJumpWithAsm"
+  [menu addTogglePatch:@"canJumpWithAsm"
           initialValue:NO
                 offset:@[ @0x2CB60 ]
                  patch:@[ @"mov x0, #1; ret" ]
@@ -483,7 +485,8 @@ void setupModMenu() {
       3; // Visible option in a category | By default is 3 [MAX 5]
 
   // Welcome message - optional
-  [menu showMessage:[NSString stringWithFormat:@"@@APPNAME@@ %s Mod Menu!", Version]
+  [menu showMessage:[NSString
+                        stringWithFormat:@"@@APPNAME@@ %s Mod Menu!", Version]
            duration:3.0
             credits:[NSString stringWithFormat:@"Developed by %s", Author]];
 
