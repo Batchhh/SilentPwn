@@ -67,7 +67,7 @@ This script will automatically remove the old com.* files on the device and uplo
 
 ## 📖 Documentation
 
-Detailed documentation available in [wiki.md](wiki.md)
+Detailed documentation available in [wiki.md](https://github.com/Batchhh/SilentPwn/wiki/SilentPwn-iOS-Modification-Wiki)
 
 ## 🚧 Usage Warning
 
