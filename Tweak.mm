@@ -526,7 +526,7 @@ void setupModMenu() {
   */
 
   // Set Button's theme - Monochrome by default
-  [menu setTheme:ModMenuThemeDark animated:YES];
+  [menu setTheme:ModMenuThemeMonochrome animated:YES];
   /*
     ModMenuThemeDark,      // Default dark theme
     ModMenuThemeCyberpunk, // Vibrant cyberpunk colors

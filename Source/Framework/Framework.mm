@@ -51,13 +51,11 @@ const char *getFrameworkPath() {
 
     if (handle) {
       dlclose(handle);
-      return [unityFrameworkPath fileSystemRepresentation];
+      return [unityFrameworkPath UTF8String];
     }
 
     // If UnityFramework fails, use the main bundle executable
-    NSString *mainExecutablePath =
-        [appPath stringByAppendingPathComponent:mainBundleName];
-    return [mainExecutablePath fileSystemRepresentation];
+    return [[appPath stringByAppendingPathComponent:mainBundleName] UTF8String];
   }
 }
 
