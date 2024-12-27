@@ -32,7 +32,7 @@ const char *getFrameworkName() {
       return "UnityFramework";
     }
     // If UnityFramework fails, use the main bundle executable name
-    return [mainBundleName fileSystemRepresentation];
+    return [[mainBundleName fileSystemRepresentation] UTF8String];
   }
 }
 
