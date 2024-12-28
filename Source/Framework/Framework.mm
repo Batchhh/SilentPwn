@@ -108,7 +108,7 @@ BOOL editJSONFile(NSString *fileName, void (^editBlock)(NSMutableDictionary *jso
   }
 }
 
-NSString *getAppName() {
+const char *getAppName() {
   @autoreleasepool {
     NSString *bundleName = [[NSBundle mainBundle]
         objectForInfoDictionaryKey:@"CFBundleDisplayName"];
@@ -116,14 +116,14 @@ NSString *getAppName() {
       bundleName =
           [[NSBundle mainBundle] objectForInfoDictionaryKey:@"CFBundleName"];
     }
-    return bundleName ?: @"Unknown";
+    return strdup([bundleName UTF8String]) ?: "Unknown";
   }
 }
 
-NSString *getAppVersion() {
+const char *getAppVersion() {
   @autoreleasepool {
     NSString *version = [[NSBundle mainBundle]
         objectForInfoDictionaryKey:@"CFBundleShortVersionString"];
-    return version ?: @"Unknown";
+    return strdup([version UTF8String]) ?: "Unknown";
   }
 }

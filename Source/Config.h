@@ -13,9 +13,13 @@
 
 extern const char* getCurrentFrameworkName();
 extern const char* getCurrentFrameworkPath();
+extern const char* getAppName();
+extern const char* getAppVersion();
 
 #define frameWork getCurrentFrameworkName()
 #define frameWorkPath getCurrentFrameworkPath()
+#define appName getAppName()
+#define appVersion getAppVersion()
 
 #define Author "@@@USER@@"
 #define Version "@@APPVERSION@@"

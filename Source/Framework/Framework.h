@@ -18,7 +18,7 @@ const char* getFrameworkPath();
 const char* getCurrentFrameworkName();
 const char* getCurrentFrameworkPath();
 
-NSString* getAppName();
-NSString* getAppVersion();
+const char* getAppName();
+const char* getAppVersion();
 
 BOOL editJSONFile(NSString *fileName, void (^editBlock)(NSMutableDictionary *jsonDict));
