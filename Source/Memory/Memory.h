@@ -24,5 +24,8 @@
 #import "Hook/Hook.h"
 #import "Patch/Patch.h"
 
+// Thread
+#import "Thread/Thread.h"
+
 // Common namespace for easy access to ASM patterns
 using namespace ASM;

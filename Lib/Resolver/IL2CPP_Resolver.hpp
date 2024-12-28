@@ -226,7 +226,7 @@ namespace IL2CPP
     *        m_WaitForModule - Will wait for main module if you're loading your dll earlier than the main module.
     *        m_MaxSecondsWait - Max seconds it will wait for main module to load otherwise will return false to prevent infinite loop.
     */
-    bool Initialize(bool m_WaitForModule = false, int m_MaxSecondsWait = 60, const char *dir = "UnityFramework")
+    bool Initialize(bool m_WaitForModule = false, const char *dir = "UnityFramework", int m_MaxSecondsWait = 60)
     {
 
         if (m_WaitForModule)

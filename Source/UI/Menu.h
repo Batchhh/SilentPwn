@@ -208,9 +208,7 @@ typedef NS_ENUM(NSInteger, ModMenuTheme) {
      cancelButton:(NSString *)cancelTitle
          callback:(void (^)(BOOL confirmed))callback;
 
-- (void)showPatchManager:(NSString *)message
-                   title:(NSString *)title
-                    icon:(NSString *)iconName;
+- (void)showPatchManager:(NSString *)title icon:(NSString *)iconName;
 - (void)togglePatch:(NSInteger)index enabled:(BOOL)enabled;
 - (void)deletePatch:(NSInteger)index;
 

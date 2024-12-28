@@ -39,7 +39,7 @@ SilentPwn is an advanced iOS Mod Menu framework designed for runtime manipulatio
 Install the [package](https://github.com/Batchhh/SilentPwn/releases/latest)
 
 ## 🔧 Download iPhone15.5 SDK
-- [Download iPhone15.5 SDK](https://github.com/Batchhh/SilentPwn/releases/latest)
+- [Download iPhone15.5 SDK in 2.0.0 Release](https://github.com/Batchhh/SilentPwn/releases/tag/2.0.0)
 ```bash
 mv iPhoneOS15.5.sdk $THEOS/sdks/
 ```
@@ -54,7 +54,7 @@ cd SilentPwn
 
 2. Build for theos
 ```bash
-$THEOS/bin/nicify.pl . && mv Batchh_SilentPwn\ 2.nic.tar $THEOS/templates/ios
+$THEOS/bin/nicify.pl . && mv Batchh_SilentPwn*.nic.tar $THEOS/templates/ios
 ```
 
 ## 🎉 Upload.sh

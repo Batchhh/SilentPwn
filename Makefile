@@ -24,7 +24,8 @@ ${TWEAK_NAME}_FILES = Tweak.mm \
 	${wildcard Source/Memory/Hook/*.mm} \
 	${wildcard Source/Memory/Patch/*.mm} \
 	${wildcard Source/Memory/Helper.mm} \
-	${wildcard Source/Framework/*.mm}
+	${wildcard Source/Framework/*.mm} \
+	${wildcard Source/Memory/Thread/*.mm}
 
 ${TWEAK_NAME}_LIBRARIES += substrate
 

@@ -24,6 +24,6 @@ extern const char* getCurrentFrameworkPath();
 #define About "Author: " Author "\nVersion: " Version
 #define changelog "Added stuff"
 
-#define WAIT 5.0 // seconds
+#define WAIT 3.0 // seconds
 
-#define DebugMode true // This will enable debug logging
+#define DebugMode true // This will enable debug tools

@@ -29,11 +29,13 @@ void il2cpp() {
 
   // This section will be used for il2cpp resolver
 
-  bool success = IL2CPP::Initialize(true, 60, frameWorkPath);
+  bool success = IL2CPP::Initialize(false, frameWorkPath);
   if (!success)
     [menu showMessage:@"Failed to initialize IL2CPP"
              duration:3.0
               credits:@"IL2CPP"];
+
+
 }
 
 void hooks() {
