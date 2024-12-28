@@ -1,3 +1,13 @@
+/*
+ * File: Thread.h
+ * Project: SilentPwn
+ * Author: Batchh
+ * Created: 2024-12-14
+ *
+ * Copyright (c) 2024 Batchh. All rights reserved.
+ *
+ * Description: Thread
+ */
 #include <pthread.h>
 
 namespace Thread {
