@@ -227,6 +227,8 @@ namespace IL2CPP
                 if (!pMethod)
                     return 0;
 
+                GetMethodPointer(m_pClass, m_pMethodName, m_iArgs);
+
                 return pMethod->m_pMethodPointerRva;
             }
 
