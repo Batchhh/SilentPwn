@@ -2763,11 +2763,11 @@
   [addButton addTarget:self action:@selector(handleAddPatch:) forControlEvents:UIControlEventTouchUpInside];
   [inputContainer addSubview:addButton];
 
-  UIView *patchesContainer = [[UIView alloc] initWithFrame:CGRectMake(10, 115, 280, 260)];
+  UIView *patchesContainer = [[UIView alloc] initWithFrame:CGRectMake(10, 115, 280, 270)];
   patchesContainer.backgroundColor = [UIColor colorWithRed:0.1 green:0.1 blue:0.1 alpha:1.0];
   patchesContainer.layer.cornerRadius = 12;
 
-  UIScrollView *scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 0, 280, 260)];
+  UIScrollView *scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 0, 280, 270)];
   scrollView.backgroundColor = [UIColor clearColor];
   scrollView.showsHorizontalScrollIndicator = NO;
   scrollView.directionalLockEnabled = YES;
