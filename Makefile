@@ -1,8 +1,17 @@
 ARCHS = arm64 #arm64e
 DEBUG = 1 #0
-TARGET = iphone:clang:latest:15.5 # <- important iphone15.5SDK
 FOR_RELEASE = 0 #1
 FINALPACKAGE = 0 #1
+
+MOBILE_THEOS=1
+ifeq ($(MOBILE_THEOS),1)
+  # path to your sdk
+  SDK_PATH = $(THEOS)/sdks/iPhoneOS15.5.sdk/
+  $(info ===> Setting SYSROOT to $(SDK_PATH)...)
+  SYSROOT = $(SDK_PATH)
+else
+  TARGET = iphone:clang:latest:15.5
+endif
 
 THEOS_PACKAGE_SCHEME = rootless #rootfull
 
