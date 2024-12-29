@@ -3,7 +3,8 @@ DEBUG = 1 #0
 FOR_RELEASE = 0 #1
 FINALPACKAGE = 0 #1
 
-MOBILE_THEOS=1
+# Only set this to 1 if you are building the tweak in a mobile device
+MOBILE_THEOS=0
 ifeq ($(MOBILE_THEOS),1)
   # path to your sdk
   SDK_PATH = $(THEOS)/sdks/iPhoneOS15.5.sdk/
