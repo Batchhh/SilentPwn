@@ -207,6 +207,8 @@ namespace IL2CPP
                 Unity::il2cppMethodInfo* pMethod = reinterpret_cast<Unity::il2cppMethodInfo * (IL2CPP_CALLING_CONVENTION)(void*, const char*, int)>(Functions.m_ClassGetMethodFromName)(m_pClass, m_pMethodName, m_iArgs);
                 if (!pMethod) return nullptr;
 
+                MemoryInfo info = getBaseAddress(frameWork);
+                pMethod->m_pMethodPointerRva = reinterpret_cast<uint64_t>(pMethod->m_pMethodPointer) - info.address;
                 return pMethod->m_pMethodPointer;
             }
 
@@ -221,13 +223,11 @@ namespace IL2CPP
             }
 
             uint64_t GetMethodPointerRVA(Unity::il2cppClass* m_pClass, const char* m_pMethodName, int m_iArgs = -1) {
-                void* methodPointer = GetMethodPointer(m_pClass, m_pMethodName, m_iArgs);
-                if (!methodPointer)
+                Unity::il2cppMethodInfo* pMethod = reinterpret_cast<Unity::il2cppMethodInfo * (IL2CPP_CALLING_CONVENTION)(void*, const char*, int)>(Functions.m_ClassGetMethodFromName)(m_pClass, m_pMethodName, m_iArgs);
+                if (!pMethod)
                     return 0;
 
-                MemoryInfo info = getBaseAddress(frameWork);
-                uint64_t rvaOffset = reinterpret_cast<uint64_t>(methodPointer) - info.address;
-                return rvaOffset;
+                return pMethod->m_pMethodPointerRva;
             }
 
             uint64_t GetMethodPointerRVA(const char* m_pClassName, const char* m_pMethodName, int m_iArgs = -1) {

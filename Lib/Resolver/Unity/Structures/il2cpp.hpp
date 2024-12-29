@@ -100,7 +100,7 @@ namespace Unity
         int m_iAttributeIndex;
         unsigned int m_uToken;
     };
-    
+
     struct il2cppParameterInfo
     {
         const char* m_pName;
@@ -108,10 +108,11 @@ namespace Unity
         unsigned int m_uToken;
         il2cppType* m_pParameterType;
     };
-    
+
     struct il2cppMethodInfo
     {
         void* m_pMethodPointer;
+        uint64_t m_pMethodPointerRva;
 #ifdef UNITY_VERSION_2022_3_8F1
         void* m_pVirtualMethodPointer;
 #endif
