@@ -29,9 +29,9 @@
 #include <string>
 #include <substrate.h>
 
-// Memory read/write macros
+// Memory read and write operations
 template <typename T>
-void SetValue(void* ptr, uint64_t offset, T value) {
+void SetValue(void* ptr, uint64_t offset, T value) {  
   *(T*)((uint64_t)(ptr) + offset) = value;
 }
 

@@ -208,8 +208,8 @@ namespace IL2CPP
                 if (!pMethod) return nullptr;
 
                 MemoryInfo info = getBaseAddress(frameWork);
-                pMethod->m_pMethodPointerRva = reinterpret_cast<uint64_t>(pMethod->m_pMethodPointer) - info.address;
-                return pMethod->m_pMethodPointer;
+                pMethod->m_pMethodPointerRva = reinterpret_cast<void*>(reinterpret_cast<uint64_t>(pMethod->m_pMethodPointer) - info.address);
+                return pMethod->m_pMethodPointerRva;
             }
 
 
@@ -229,7 +229,7 @@ namespace IL2CPP
 
                 GetMethodPointer(m_pClass, m_pMethodName, m_iArgs);
 
-                return pMethod->m_pMethodPointerRva;
+                return reinterpret_cast<uint64_t>(pMethod->m_pMethodPointerRva);
             }
 
             uint64_t GetMethodPointerRVA(const char* m_pClassName, const char* m_pMethodName, int m_iArgs = -1) {
@@ -239,7 +239,6 @@ namespace IL2CPP
 
                 return 0;
             }
-
 
             const char* MethodGetParamName(Unity::il2cppMethodInfo* m_pMethodInfo, uint32_t index)
             {
@@ -440,6 +439,12 @@ namespace IL2CPP
 
         template<typename TReturn, typename... TArgs>
         TReturn CallMethod(const char* m_pMethodName, TArgs... tArgs) { return CallMethod<TReturn>(GetMethodPointer(m_pMethodName), tArgs...); }
+
+        // template<typename TReturn, typename... TArgs>
+        // TReturn CallMethodRVA(void* m_pMethod, TArgs... tArgs) { return reinterpret_cast<TReturn(UNITY_CALLING_CONVENTION)(void*, TArgs...)>(m_pMethod)(this, tArgs...); }
+
+        // template<typename TReturn, typename... TArgs>
+        // TReturn CallMethodRVA(const char* m_pMethodName, TArgs... tArgs) { return CallMethodRVA<TReturn>(GetMethodPointerRVA(m_pMethodName), tArgs...); }
 
         template<typename TReturn, typename... TArgs>
         TReturn CallMethodSafe(void* m_pMethod, TArgs... tArgs)
