@@ -305,19 +305,17 @@ namespace IL2CPP
         }
 
         template <typename Ret, typename... Args>
-        Ret InvokeMethodByRVA(uintptr_t rva, void *instance, Args... args)
+        Ret InvokeMethodByRVA(uint64_t rva, void *instance, Args... args)
         {
-            auto methodPointer = reinterpret_cast<Ret(UNITY_CALLING_CONVENTION)(void *, Args...)>(rva);
+            auto methodPointer = reinterpret_cast<Ret(UNITY_CALLING_CONVENTION)(void *, Args...)>(KittyMemory::getRealOffset(rva));
             return methodPointer(instance, args...);
         }
 
         template <typename Ret, typename... Args>
-        void InvokeMethodOnAllInstancesByRVA(const std::string &className, uintptr_t rva, Args... args)
+        void InvokeMethodOnAllInstancesByRVA(const std::string &className, const std::string &methodName, Args... args)
         {
-            auto il2cppClass = IL2CPP::Class::Find(className.c_str());
-            if (!il2cppClass)
-            {
-                std::cerr << "Class " << className << " not found.\n";
+            auto rva = IL2CPP::Class::Utils::GetMethodPointerRVA(className.c_str(), methodName.c_str(), sizeof...(args));
+            if (!rva) {
                 return;
             }
 

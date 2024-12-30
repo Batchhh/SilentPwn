@@ -43,9 +43,9 @@
 
 
 // Vector2, Vector3 && Quaternion
-#include "Vector2.hpp"
-#include "Vector3.hpp"
-#include "Quaternion.hpp"
+#include "Utils/Types/Vector2.hpp"
+#include "Utils/Types/Vector3.hpp"
+#include "Utils/Types/Quaternion.hpp"
 
 // IL2CPP Headers
 #include "Data.hpp"
@@ -61,7 +61,6 @@
 
 // IL2CPP Utils
 #include "Utils/Hash.hpp"
-#include "Utils/VTable.hpp"
 
 // IL2CPP API Headers
 #include "API/Domain.hpp"
@@ -97,8 +96,6 @@ namespace Unity
 
 // IL2CPP Headers after Unity API
 #include "Utils/Helper.hpp"
-#include "Utils/CacheInstance.hpp"
-#include "API/Callback.hpp"
 
 namespace IL2CPP
 {
