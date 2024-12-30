@@ -30,10 +30,19 @@
 #include <substrate.h>
 
 // Memory read/write macros
-#define SetValue(type, ptr, offset, value)                                     \
-  *(type *)((uint64_t)(ptr) + (offset)) = (value)
-#define GetValue(type, ptr, offset) *(type *)((uint64_t)(ptr) + (offset))
-#define AccessClass(ptr, offset) *(void **)((uint64_t)(ptr) + (offset))
+template <typename T>
+void SetValue(void* ptr, uint64_t offset, T value) {
+  *(T*)((uint64_t)(ptr) + offset) = value;
+}
+
+template <typename T>
+T GetValue(void* ptr, uint64_t offset) {
+  return *(T*)((uint64_t)(ptr) + offset);
+}
+
+inline void* AccessClass(void* ptr, uint64_t offset) {
+  return *(void**)((uint64_t)(ptr) + offset);
+}
 
 namespace ASM {
     // Basic Control Flow
