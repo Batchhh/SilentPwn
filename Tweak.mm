@@ -492,6 +492,7 @@ void setupModMenu() {
            duration:3.0
             credits:[NSString stringWithFormat:@"Developed by %s", Author]];
 
+
   // Set container titles for each category - optional
   // [menu setContainerTitle:@"Hooks" forCategory:0];
   // [menu setContainerTitle:@"Memory" forCategory:1];
@@ -507,6 +508,10 @@ void setupModMenu() {
   // [menu setCategoryIcon:Icons::INFO forCategory:3];
   // [menu setCategoryIcon:Icons::EDIT forCategory:4];
   // [menu setCategoryIcon:Icons::TERMINAL forCategory:5];
+
+
+  // Il2cpp Resolver handler
+  il2cpp();
 
   // Setup default - optional
   // @param DebugMode to display debug options
@@ -547,9 +552,6 @@ void setupModMenu() {
     ModMenuThemeGalaxy,     // Space and cosmic colors
     ModMenuThemeAqua,       // Water and aquatic theme
   */
-
-  // Il2cpp Resolver handler
-  il2cpp();
 
   // Add hooks and patches
   hooks();
