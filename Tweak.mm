@@ -480,17 +480,28 @@ void setupQuickActions(ModMenu *menu) {
 void setupModMenu() {
   menu = [ModMenu shared]; // Init the menu
 
-  // Configure menu
-  menu.maxButtons =
-      6; // Max button surrounding the hub button | By default is 3 [MAX 6]
-  menu.maxVisibleOptions =
-      3; // Visible option in a category | By default is 3 [MAX 5]
+  // load saved settings
+  [menu loadSettings];
 
   // Welcome message - optional
   [menu showMessage:[NSString
                         stringWithFormat:@"@@APPNAME@@ %s Mod Menu!", Version]
            duration:3.0
             credits:[NSString stringWithFormat:@"Developed by %s", Author]];
+
+  // Configure menu
+  //menu.maxButtons = 6; // Max button surrounding the hub button | By default is 6 [MAX 6]
+  //menu.maxVisibleOptions = 3; // Visible option in a category | By default is 3 [MAX 5]
+
+  // Setup default - optional
+  // @param DebugMode to display debug options
+  [menu addDefaultOptions:DebugMode];
+
+  // Setup options main customization
+  setupOptions(menu);
+
+  // Setup quick actions - optional | Long press the hub button
+  setupQuickActions(menu);
 
 
   // Set container titles for each category - optional
@@ -509,22 +520,8 @@ void setupModMenu() {
   // [menu setCategoryIcon:Icons::EDIT forCategory:4];
   // [menu setCategoryIcon:Icons::TERMINAL forCategory:5];
 
-
-  // Il2cpp Resolver handler
-  il2cpp();
-
-  // Setup default - optional
-  // @param DebugMode to display debug options
-  [menu addDefaultOptions:DebugMode];
-
-  // Setup options main customization
-  setupOptions(menu);
-
-  // Setup quick actions - optional | Long press the hub button
-  setupQuickActions(menu);
-
-  // Set Menu layout to Perspective Tunnel by default
-  [menu switchTo:ModMenuLayoutRadial animated:YES];
+  // ModMenuLayoutRadial by default
+  // [menu switchTo:ModMenuLayoutRadial animated:YES];
   /*
     ModMenuLayoutRadial, // Radial layout | button in a circle
     ModMenuLayoutGrid,   // Grid layout | buttons in a grid
@@ -533,7 +530,7 @@ void setupModMenu() {
   */
 
   // Set Button's theme - Monochrome by default
-  [menu setTheme:ModMenuThemeMonochrome animated:YES];
+  // [menu setTheme:ModMenuThemeMonochrome animated:YES];
   /*
     ModMenuThemeDark,      // Default dark theme
     ModMenuThemeCyberpunk, // Vibrant cyberpunk colors
@@ -552,17 +549,23 @@ void setupModMenu() {
     ModMenuThemeGalaxy,     // Space and cosmic colors
     ModMenuThemeAqua,       // Water and aquatic theme
   */
-
-  // Add hooks and patches
-  hooks();
-  patches();
 }
 
 void waitBeforeLaunch() {
   dispatch_after(
       dispatch_time(DISPATCH_TIME_NOW, (int64_t)(WAIT * NSEC_PER_SEC)),
       dispatch_get_main_queue(), ^{
+
+        // Il2cpp Resolver handler
+        il2cpp();
+
+        // Setup ModMenu
         setupModMenu();
+
+        // Add hooks and patches
+        hooks();
+        patches();
+
       });
 }
 

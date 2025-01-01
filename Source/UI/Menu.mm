@@ -181,7 +181,7 @@
     CGRect frame = CGRectMake(0, 0, UIScreen.mainScreen.bounds.size.width,
                               UIScreen.mainScreen.bounds.size.height);
     sharedInstance = [[ModMenu alloc] initWithFrame:frame];
-    sharedInstance.maxButtons = 3;
+    sharedInstance.maxButtons = 6;
   });
   return sharedInstance;
 }
@@ -233,7 +233,8 @@
     self.tapGestureKeyboard.enabled = NO;
     [self addGestureRecognizer:self.tapGestureKeyboard];
     [self setupThemes];
-    self.currentTheme = ModMenuThemeDark;
+    self.currentTheme = ModMenuThemeMonochrome;
+    self.currentLayout = ModMenuLayoutRadial;
     [self startInactivityTimer];
     self.debugLogs = [NSMutableArray array];
     self.categoryIcons = [NSMutableDictionary dictionary];
@@ -488,8 +489,6 @@
                      animations:^{
                        button.center = targetPosition;
                        button.transform = CGAffineTransformMakeScale(1.0, 1.0);
-                       button.transform = CGAffineTransformRotate(
-                           button.transform, sin(i * 0.3) * 0.1);
                      }
                      completion:nil];
     previousButtonCenter = targetPosition;
@@ -582,6 +581,7 @@
   if (self.isOpen) {
     [self hide];
     [self startInactivityTimer];
+    [self saveSettings];
   } else {
     [self show];
     [self.inactivityTimer invalidate];
@@ -1185,6 +1185,7 @@
     callback(@(slider.value));
   }
   [self updateSliderLabel:slider];
+  [self saveSettings];
 }
 - (void)toggleValueChanged:(UISwitch *)toggle {
   NSString *key = toggle.accessibilityIdentifier;
@@ -1226,7 +1227,7 @@
             addDebugLog:[NSString
                             stringWithFormat:@"Toggle offset: %llx -> %@",
                                              [offsets[i] unsignedLongLongValue],
-                                             patches[i]]];
+                                             patchHex]];
       }
     } else {
       BOOL success = [Patch revertOffset:offset];
@@ -1240,6 +1241,7 @@
                             stringWithFormat:@"Revert offset: %llx", offset]];
     }
   }
+  [self saveSettings];
 }
 - (void)textFieldDidChange:(UITextField *)textField {
   NSString *key = textField.accessibilityIdentifier;
@@ -1364,6 +1366,8 @@
       [self closePopup];
     }
   }
+  if (self.isSnappedToEdge) self.isSnappedToEdge = NO;
+  [self startInactivityTimer];
 }
 - (void)setContainerTitle:(NSString *)title forCategory:(NSInteger)category {
   NSString *key =
@@ -1371,89 +1375,101 @@
   self.settingValues[key] = title;
 }
 - (void)showMessage:(NSString *)message
-           duration:(NSTimeInterval)duration
-            credits:(NSString *)credits {
+       duration:(NSTimeInterval)duration
+      credits:(NSString *)credits {
   if (self.messageLabel) {
-    [self.messageLabel removeFromSuperview];
+  [self.messageLabel removeFromSuperview];
   }
+  
+  NSDictionary *colors = self.themeColors[@(self.currentTheme)];
+  
   CGFloat padding = 15.0;
   CGFloat messageHeight = 70.0;
   CGFloat messageWidth = self.bounds.size.width - 4 * padding;
   UIView *messageContainer =
-      [[UIView alloc] initWithFrame:CGRectMake(padding * 2, -messageHeight,
-                                               messageWidth, messageHeight)];
-  messageContainer.backgroundColor = [UIColor colorWithWhite:0.1 alpha:0.95];
+    [[UIView alloc] initWithFrame:CGRectMake(padding * 2, -messageHeight,
+                         messageWidth, messageHeight)];
+  messageContainer.backgroundColor = colors[@"background"];
   messageContainer.layer.cornerRadius = 12;
   messageContainer.clipsToBounds = YES;
+  
   CAGradientLayer *gradientLayer = [CAGradientLayer layer];
   gradientLayer.frame = messageContainer.bounds;
   gradientLayer.colors = @[
-    (id)[UIColor colorWithRed:0 green:0.9 blue:1 alpha:0.6].CGColor,
-    (id)[UIColor colorWithRed:0.4 green:0.2 blue:1 alpha:0.6].CGColor
+  (id)colors[@"primary"],
+  (id)colors[@"secondary"]
   ];
   gradientLayer.startPoint = CGPointMake(0, 0);
   gradientLayer.endPoint = CGPointMake(1, 1);
+  
   CAShapeLayer *maskLayer = [CAShapeLayer layer];
   maskLayer.frame = messageContainer.bounds;
   maskLayer.path =
-      [UIBezierPath bezierPathWithRoundedRect:messageContainer.bounds
-                                 cornerRadius:12]
-          .CGPath;
+    [UIBezierPath bezierPathWithRoundedRect:messageContainer.bounds
+                 cornerRadius:12]
+      .CGPath;
   maskLayer.lineWidth = 1.5;
-  maskLayer.strokeColor = UIColor.whiteColor.CGColor;
+  
+  maskLayer.strokeColor = [(UIColor *)colors[@"accent"] CGColor];
   maskLayer.fillColor = UIColor.clearColor.CGColor;
   gradientLayer.mask = maskLayer;
   [messageContainer.layer addSublayer:gradientLayer];
+  
   self.messageLabel =
-      [[UILabel alloc] initWithFrame:CGRectMake(15, 10, messageWidth - 30, 30)];
+    [[UILabel alloc] initWithFrame:CGRectMake(15, 10, messageWidth - 30, 30)];
   self.messageLabel.text = message;
-  self.messageLabel.textColor = [UIColor whiteColor];
+  self.messageLabel.textColor = colors[@"text"];
   self.messageLabel.textAlignment = NSTextAlignmentCenter;
   self.messageLabel.font = [UIFont boldSystemFontOfSize:16];
   [messageContainer addSubview:self.messageLabel];
+  
   UILabel *creditsLabel =
-      [[UILabel alloc] initWithFrame:CGRectMake(15, 35, messageWidth - 30, 25)];
+    [[UILabel alloc] initWithFrame:CGRectMake(15, 35, messageWidth - 30, 25)];
   creditsLabel.text = credits;
-  creditsLabel.textColor = [UIColor colorWithWhite:0.7 alpha:1.0];
+  creditsLabel.textColor = [colors[@"text"] colorWithAlphaComponent:0.7];
   creditsLabel.textAlignment = NSTextAlignmentCenter;
   creditsLabel.font = [UIFont systemFontOfSize:12];
   [messageContainer addSubview:creditsLabel];
+  
   CABasicAnimation *pulseAnimation =
-      [CABasicAnimation animationWithKeyPath:@"opacity"];
+    [CABasicAnimation animationWithKeyPath:@"opacity"];
   pulseAnimation.duration = 1.5;
   pulseAnimation.fromValue = @(0.4);
   pulseAnimation.toValue = @(0.8);
   pulseAnimation.timingFunction = [CAMediaTimingFunction
-      functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+    functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
   pulseAnimation.autoreverses = YES;
   pulseAnimation.repeatCount = HUGE_VALF;
   [gradientLayer addAnimation:pulseAnimation forKey:@"pulse"];
+  
   [self addSubview:messageContainer];
+  
   [UIView animateWithDuration:0.6
-      delay:0
-      usingSpringWithDamping:0.7
-      initialSpringVelocity:0.5
-      options:UIViewAnimationOptionCurveEaseOut
+    delay:0
+    usingSpringWithDamping:0.7
+    initialSpringVelocity:0.5
+    options:UIViewAnimationOptionCurveEaseOut
+    animations:^{
+    messageContainer.frame =
+      CGRectMake(padding * 2, padding, messageWidth, messageHeight);
+    }
+    completion:^(BOOL finished) {
+    [UIView animateWithDuration:0.5
+      delay:duration
+      options:UIViewAnimationOptionCurveEaseIn
       animations:^{
-        messageContainer.frame =
-            CGRectMake(padding * 2, padding, messageWidth, messageHeight);
+        messageContainer.frame = CGRectMake(padding * 2, -messageHeight,
+                          messageWidth, messageHeight);
+        messageContainer.alpha = 0;
       }
       completion:^(BOOL finished) {
-        [UIView animateWithDuration:0.5
-            delay:duration
-            options:UIViewAnimationOptionCurveEaseIn
-            animations:^{
-              messageContainer.frame = CGRectMake(padding * 2, -messageHeight,
-                                                  messageWidth, messageHeight);
-              messageContainer.alpha = 0;
-            }
-            completion:^(BOOL finished) {
-              [messageContainer removeFromSuperview];
-            }];
+        [messageContainer removeFromSuperview];
       }];
+    }];
+    
   UISwipeGestureRecognizer *swipeUp = [[UISwipeGestureRecognizer alloc]
-      initWithTarget:self
-              action:@selector(dismissMessage)];
+    initWithTarget:self
+        action:@selector(dismissMessage)];
   swipeUp.direction = UISwipeGestureRecognizerDirectionUp;
   [messageContainer addGestureRecognizer:swipeUp];
   messageContainer.userInteractionEnabled = YES;
@@ -1477,6 +1493,7 @@
 }
 - (void)textFieldDidEndEditing:(UITextField *)textField {
   self.tapGestureKeyboard.enabled = NO;
+  [self saveSettings];
 }
 - (void)multiSelectOptionTapped:(UIButton *)button {
   UIView *container = button.superview.superview;
@@ -1570,6 +1587,7 @@
                            valueLabel.alpha = 1.0;
                          }];
       }];
+      [self saveSettings];
 }
 - (NSInteger)getStepperIntValue:(NSInteger)category
                       withTitle:(NSString *)title {
@@ -1957,6 +1975,7 @@
   [self dismissQuickActions];
 }
 - (void)showQuickMessage:(NSString *)message {
+  NSDictionary *colors = self.themeColors[@(self.currentTheme)];
   CGSize size =
       [message
           boundingRectWithSize:CGSizeMake(250, CGFLOAT_MAX)
@@ -1969,14 +1988,14 @@
   UILabel *popupLabel = [[UILabel alloc]
       initWithFrame:CGRectMake(0, 0, size.width + 20, size.height + 20)];
   popupLabel.text = message;
-  popupLabel.textColor = [UIColor whiteColor];
-  popupLabel.backgroundColor = [UIColor colorWithWhite:0.2 alpha:0.9];
+  popupLabel.textColor = colors[@"text"];
+  popupLabel.backgroundColor = colors[@"background"];
   popupLabel.textAlignment = NSTextAlignmentCenter;
   popupLabel.font = [UIFont boldSystemFontOfSize:14];
   popupLabel.layer.cornerRadius = 20;
   popupLabel.clipsToBounds = YES;
   popupLabel.center =
-      CGPointMake(self.hubButton.center.x, self.hubButton.center.y - 80);
+      CGPointMake(self.bounds.size.width / 2, self.bounds.size.height - 80);
   popupLabel.alpha = 0;
   [self addSubview:popupLabel];
   [UIView animateWithDuration:0.3
@@ -2062,108 +2081,47 @@
 }
 - (void)performLaunchAnimation {
   self.hubButton.alpha = 0;
-  self.hubButton.transform = CGAffineTransformMakeScale(0.01, 0.01);
-  CALayer *glowLayer = [CALayer layer];
-  glowLayer.frame = CGRectMake(-25, -25, self.hubButton.bounds.size.width + 50,
-                               self.hubButton.bounds.size.height + 50);
-  glowLayer.cornerRadius = glowLayer.frame.size.width / 2;
-  glowLayer.backgroundColor =
-      [UIColor colorWithRed:0 green:0.9 blue:1 alpha:0.3].CGColor;
-  glowLayer.shadowColor =
-      [UIColor colorWithRed:0 green:0.9 blue:1 alpha:1.0].CGColor;
-  glowLayer.shadowOffset = CGSizeZero;
-  glowLayer.shadowRadius = 15;
-  glowLayer.shadowOpacity = 0.8;
-  [self.hubButton.layer insertSublayer:glowLayer atIndex:0];
-  CABasicAnimation *pulseAnimation =
-      [CABasicAnimation animationWithKeyPath:@"transform.scale"];
-  pulseAnimation.duration = 2.0;
-  pulseAnimation.fromValue = @1.0;
-  pulseAnimation.toValue = @1.3;
-  pulseAnimation.autoreverses = YES;
-  pulseAnimation.repeatCount = 3;
-  pulseAnimation.timingFunction = [CAMediaTimingFunction
-      functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
-  [glowLayer addAnimation:pulseAnimation forKey:@"pulse"];
-  CAShapeLayer *haloLayer = [CAShapeLayer layer];
-  UIBezierPath *circlePath = [UIBezierPath
-      bezierPathWithArcCenter:CGPointMake(self.hubButton.bounds.size.width / 2,
-                                          self.hubButton.bounds.size.height / 2)
-                       radius:40
-                   startAngle:0
-                     endAngle:2 * M_PI
-                    clockwise:YES];
-  haloLayer.path = circlePath.CGPath;
-  haloLayer.strokeColor =
-      [UIColor colorWithRed:0.2 green:0.8 blue:1 alpha:0.6].CGColor;
-  haloLayer.fillColor = [UIColor clearColor].CGColor;
-  haloLayer.lineWidth = 2;
-  [self.hubButton.layer addSublayer:haloLayer];
-  CABasicAnimation *rotationAnimation =
-      [CABasicAnimation animationWithKeyPath:@"transform.rotation.z"];
-  rotationAnimation.toValue = @(2 * M_PI);
-  rotationAnimation.duration = 3;
-  rotationAnimation.repeatCount = 2;
-  [haloLayer addAnimation:rotationAnimation forKey:@"rotationAnimation"];
-  for (int i = 0; i < 12; i++) {
-    CALayer *particle = [CALayer layer];
-    particle.frame = CGRectMake(0, 0, 4, 4);
-    particle.cornerRadius = 2;
-    particle.backgroundColor =
-        [UIColor colorWithRed:0 green:0.9 blue:1 alpha:0.8].CGColor;
-    particle.position = self.hubButton.center;
-    [self.layer addSublayer:particle];
-    CGFloat angle = (2 * M_PI * i) / 12;
-    CGFloat distance = 100;
-    CGPoint endPoint =
-        CGPointMake(self.hubButton.center.x + cos(angle) * distance,
-                    self.hubButton.center.y + sin(angle) * distance);
-    CABasicAnimation *moveAnim =
-        [CABasicAnimation animationWithKeyPath:@"position"];
-    moveAnim.fromValue = [NSValue valueWithCGPoint:self.hubButton.center];
-    moveAnim.toValue = [NSValue valueWithCGPoint:endPoint];
-    moveAnim.duration = 1.5;
-    CABasicAnimation *fadeAnim =
-        [CABasicAnimation animationWithKeyPath:@"opacity"];
-    fadeAnim.fromValue = @1.0;
-    fadeAnim.toValue = @0.0;
-    fadeAnim.duration = 1.5;
-    CABasicAnimation *scaleAnim =
-        [CABasicAnimation animationWithKeyPath:@"transform.scale"];
-    scaleAnim.fromValue = @1.0;
-    scaleAnim.toValue = @0.1;
-    scaleAnim.duration = 1.5;
-    CAAnimationGroup *group = [CAAnimationGroup animation];
-    group.animations = @[ moveAnim, fadeAnim, scaleAnim ];
-    group.duration = 1.5;
-    group.fillMode = kCAFillModeForwards;
-    group.removedOnCompletion = NO;
-    group.timingFunction =
-        [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseOut];
-    [particle addAnimation:group forKey:@"burst"];
-  }
-  [UIView animateWithDuration:1.2
-      delay:0.3
-      usingSpringWithDamping:0.5
-      initialSpringVelocity:0.6
-      options:UIViewAnimationOptionCurveEaseOut
+  self.hubButton.transform = CGAffineTransformMakeScale(0.5, 0.5);
+
+  // Simple fade in and scale animation
+  [UIView animateWithDuration:0.8
+      delay:0
+      usingSpringWithDamping:0.7
+      initialSpringVelocity:0.5
+      options:UIViewAnimationOptionCurveEaseInOut
       animations:^{
-        self.hubButton.alpha = 1;
+        self.hubButton.alpha = 1.0;
         self.hubButton.transform = CGAffineTransformMakeScale(1.2, 1.2);
       }
       completion:^(BOOL finished) {
+        // Scale back to normal size
         [UIView animateWithDuration:0.4
             animations:^{
               self.hubButton.transform = CGAffineTransformIdentity;
             }
             completion:^(BOOL finished) {
+              // Add a simple glow effect
+              CALayer *glowLayer = [CALayer layer];
+              glowLayer.frame = self.hubButton.bounds;
+              glowLayer.cornerRadius = self.hubButton.bounds.size.width / 2;
+              glowLayer.backgroundColor =
+                  [UIColor colorWithRed:0 green:0.8 blue:1 alpha:0.3].CGColor;
+              glowLayer.shadowColor =
+                  [UIColor colorWithRed:0 green:0.8 blue:1 alpha:1.0].CGColor;
+              glowLayer.shadowOffset = CGSizeZero;
+              glowLayer.shadowRadius = 10;
+              glowLayer.shadowOpacity = 0.8;
+              [self.hubButton.layer insertSublayer:glowLayer atIndex:0];
+
+              // Move to final position after delay
               [UIView animateWithDuration:0.8
-                  delay:0.4
+                  delay:1.0
                   options:UIViewAnimationOptionCurveEaseInOut
                   animations:^{
                     [self moveToCenterRight];
                   }
                   completion:^(BOOL finished) {
+                    // Add subtle bounce effect
                     [UIView
                         animateWithDuration:0.3
                                       delay:0
@@ -2183,7 +2141,7 @@
 - (void)startInactivityTimer {
   [self.inactivityTimer invalidate];
   self.inactivityTimer =
-      [NSTimer scheduledTimerWithTimeInterval:2.0
+      [NSTimer scheduledTimerWithTimeInterval:5.0
                                        target:self
                                      selector:@selector(handleInactivity)
                                      userInfo:nil
@@ -2196,29 +2154,44 @@
     CGFloat buttonRadius = self.hubButton.bounds.size.width / 2;
     BOOL isNearEdge = NO;
     CGPoint targetCenter = center;
-    if (center.x < buttonRadius * 3) {
-      targetCenter.x = buttonRadius / 2;
+
+    if (center.x < bounds.size.width / 2) {
+      targetCenter.x = buttonRadius * 0.15;
       isNearEdge = YES;
-    } else if (center.x > bounds.size.width - buttonRadius * 3) {
-      targetCenter.x = bounds.size.width - buttonRadius / 2;
+    } else {
+      targetCenter.x = bounds.size.width - buttonRadius * 0.15;
       isNearEdge = YES;
     }
+
     if (center.y < buttonRadius * 3) {
-      targetCenter.y = buttonRadius / 2;
+      targetCenter.y = buttonRadius;
       isNearEdge = YES;
     } else if (center.y > bounds.size.height - buttonRadius * 3) {
-      targetCenter.y = bounds.size.height - buttonRadius / 2;
+      targetCenter.y = bounds.size.height - buttonRadius;
       isNearEdge = YES;
     }
+
     if (isNearEdge && !self.isSnappedToEdge) {
       self.isSnappedToEdge = YES;
-      [UIView animateWithDuration:0.3
-                            delay:0
-                          options:UIViewAnimationOptionCurveEaseInOut
-                       animations:^{
-                         self.hubButton.center = targetCenter;
-                       }
-                       completion:nil];
+
+      [UIView animateWithDuration:0.8
+          delay:0
+          usingSpringWithDamping:0.6
+          initialSpringVelocity:0.2
+          options:UIViewAnimationOptionCurveEaseInOut
+          animations:^{
+            self.hubButton.center = targetCenter;
+          }
+          completion:^(BOOL finished) {
+            [UIView animateWithDuration:0.5
+                                  delay:0
+                                options:UIViewAnimationOptionCurveEaseOut
+                             animations:^{
+                               self.hubButton.transform =
+                                   CGAffineTransformMakeScale(0.9, 0.9);
+                             }
+                             completion:nil];
+          }];
     }
   }
 }
@@ -2535,44 +2508,39 @@
   }
 }
 - (void)showPopupMessage:(NSString *)message
-                   title:(NSString *)title
-                    icon:(NSString *)iconName {
+           title:(NSString *)title
+          icon:(NSString *)iconName {
+  NSDictionary *colors = self.themeColors[@(self.currentTheme)];
   UIView *popup = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 350)];
   popup.center = self.center;
-  popup.backgroundColor = [UIColor colorWithRed:0.15
-                                          green:0.15
-                                           blue:0.15
-                                          alpha:1.0];
+  popup.backgroundColor = colors[@"background"];
   popup.layer.cornerRadius = 15;
   UIView *header = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 50)];
-  header.backgroundColor = [UIColor colorWithRed:0.1
-                                           green:0.1
-                                            blue:0.1
-                                           alpha:1.0];
+  header.backgroundColor = colors[@"primary"];
   UIImageView *iconView =
-      [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:iconName]];
-  iconView.tintColor = [UIColor whiteColor];
+    [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:iconName]];
+  iconView.tintColor = colors[@"text"];
   iconView.frame = CGRectMake(15, 10, 30, 30);
   [header addSubview:iconView];
   UILabel *titleLabel =
-      [[UILabel alloc] initWithFrame:CGRectMake(55, 10, 200, 30)];
+    [[UILabel alloc] initWithFrame:CGRectMake(55, 10, 200, 30)];
   titleLabel.text = title;
-  titleLabel.textColor = [UIColor whiteColor];
+  titleLabel.textColor = colors[@"text"];
   titleLabel.font = [UIFont boldSystemFontOfSize:16];
   [header addSubview:titleLabel];
   UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
   closeButton.frame = CGRectMake(260, 10, 30, 30);
   [closeButton setImage:[UIImage systemImageNamed:@"xmark.circle.fill"]
-               forState:UIControlStateNormal];
-  closeButton.tintColor = [UIColor whiteColor];
+         forState:UIControlStateNormal];
+  closeButton.tintColor = colors[@"text"];
   [closeButton addTarget:self
-                  action:@selector(closePopup:)
-        forControlEvents:UIControlEventTouchUpInside];
+          action:@selector(closePopup:)
+    forControlEvents:UIControlEventTouchUpInside];
   [header addSubview:closeButton];
   UITextView *messageView =
-      [[UITextView alloc] initWithFrame:CGRectMake(20, 60, 260, 280)];
+    [[UITextView alloc] initWithFrame:CGRectMake(20, 60, 260, 280)];
   messageView.text = message;
-  messageView.textColor = [UIColor whiteColor];
+  messageView.textColor = colors[@"text"];
   messageView.font = [UIFont systemFontOfSize:16];
   messageView.backgroundColor = [UIColor clearColor];
   messageView.editable = NO;
@@ -2583,10 +2551,10 @@
   popup.transform = CGAffineTransformMakeScale(0.8, 0.8);
   [self addSubview:popup];
   [UIView animateWithDuration:0.3
-                   animations:^{
-                     popup.alpha = 1;
-                     popup.transform = CGAffineTransformIdentity;
-                   }];
+           animations:^{
+           popup.alpha = 1;
+           popup.transform = CGAffineTransformIdentity;
+           }];
 }
 - (void)closePopup:(UIButton *)sender {
   UIView *popup = sender.superview.superview;
@@ -2600,80 +2568,76 @@
       }];
 }
 - (void)showAlert:(NSString *)message
-            title:(NSString *)title
-         okButton:(NSString *)okTitle
-     cancelButton:(NSString *)cancelTitle
-         callback:(void (^)(BOOL confirmed))callback {
+      title:(NSString *)title
+     okButton:(NSString *)okTitle
+   cancelButton:(NSString *)cancelTitle
+     callback:(void (^)(BOOL confirmed))callback {
+  NSDictionary *colors = self.themeColors[@(self.currentTheme)];
+  
   UIView *containerView = [[UIView alloc] initWithFrame:self.bounds];
   containerView.backgroundColor = [UIColor colorWithWhite:0 alpha:0.5];
+  
   UIView *alertView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 200)];
-  alertView.center =
-      CGPointMake(self.bounds.size.width / 2, self.bounds.size.height / 2);
-  alertView.backgroundColor = [UIColor colorWithRed:0.15
-                                              green:0.15
-                                               blue:0.15
-                                              alpha:1.0];
+  alertView.center = CGPointMake(self.bounds.size.width / 2, self.bounds.size.height / 2);
+  alertView.backgroundColor = colors[@"background"];
   alertView.layer.cornerRadius = 15;
   alertView.clipsToBounds = YES;
+  
   UIView *header = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 45)];
-  header.backgroundColor = [UIColor colorWithRed:0.2
-                                           green:0.2
-                                            blue:0.2
-                                           alpha:1.0];
-  UILabel *titleLabel =
-      [[UILabel alloc] initWithFrame:CGRectMake(15, 10, 270, 25)];
+  header.backgroundColor = colors[@"primary"]; 
+  
+  UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(15, 10, 270, 25)];
   titleLabel.text = title;
-  titleLabel.textColor = [UIColor whiteColor];
+  titleLabel.textColor = colors[@"text"];
   titleLabel.font = [UIFont boldSystemFontOfSize:16];
   [header addSubview:titleLabel];
-  UILabel *messageLabel =
-      [[UILabel alloc] initWithFrame:CGRectMake(20, 55, 260, 75)];
+  
+  UILabel *messageLabel = [[UILabel alloc] initWithFrame:CGRectMake(20, 55, 260, 75)];
   messageLabel.text = message;
-  messageLabel.textColor = [UIColor whiteColor];
+  messageLabel.textColor = colors[@"text"];
   messageLabel.font = [UIFont systemFontOfSize:14];
   messageLabel.numberOfLines = 0;
   [alertView addSubview:messageLabel];
+  
   UIButton *cancelButton = [UIButton buttonWithType:UIButtonTypeSystem];
   cancelButton.frame = CGRectMake(20, 140, 125, 40);
   [cancelButton setTitle:cancelTitle forState:UIControlStateNormal];
-  [cancelButton setTitleColor:[UIColor whiteColor]
-                     forState:UIControlStateNormal];
-  cancelButton.backgroundColor = [UIColor colorWithRed:0.3
-                                                 green:0.3
-                                                  blue:0.3
-                                                 alpha:1.0];
+  [cancelButton setTitleColor:colors[@"text"] forState:UIControlStateNormal];
+  cancelButton.backgroundColor = [colors[@"secondary"] colorWithAlphaComponent:0.8];
   cancelButton.layer.cornerRadius = 8;
   [cancelButton addTarget:self
-                   action:@selector(handleAlertResponse:)
-         forControlEvents:UIControlEventTouchUpInside];
+           action:@selector(handleAlertResponse:)
+     forControlEvents:UIControlEventTouchUpInside];
   cancelButton.tag = 0;
   [alertView addSubview:cancelButton];
+  
   UIButton *okButton = [UIButton buttonWithType:UIButtonTypeSystem];
   okButton.frame = CGRectMake(155, 140, 125, 40);
   [okButton setTitle:okTitle forState:UIControlStateNormal];
-  [okButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-  okButton.backgroundColor = [UIColor colorWithRed:0.8
-                                             green:0.2
-                                              blue:0.2
-                                             alpha:1.0];
+  [okButton setTitleColor:colors[@"text"] forState:UIControlStateNormal];
+  okButton.backgroundColor = colors[@"accent"];
   okButton.layer.cornerRadius = 8;
   [okButton addTarget:self
-                action:@selector(handleAlertResponse:)
-      forControlEvents:UIControlEventTouchUpInside];
+        action:@selector(handleAlertResponse:)
+    forControlEvents:UIControlEventTouchUpInside];
   okButton.tag = 1;
   [alertView addSubview:okButton];
+  
   [alertView addSubview:header];
   [containerView addSubview:alertView];
+  
   objc_setAssociatedObject(containerView, "alertCallback", callback,
-                           OBJC_ASSOCIATION_COPY_NONATOMIC);
+               OBJC_ASSOCIATION_COPY_NONATOMIC);
+  
   containerView.alpha = 0;
   alertView.transform = CGAffineTransformMakeScale(0.8, 0.8);
   [self addSubview:containerView];
+  
   [UIView animateWithDuration:0.3
-                   animations:^{
-                     containerView.alpha = 1;
-                     alertView.transform = CGAffineTransformIdentity;
-                   }];
+           animations:^{
+           containerView.alpha = 1;
+           alertView.transform = CGAffineTransformIdentity;
+           }];
 }
 - (void)handleAlertResponse:(UIButton *)sender {
   UIView *alertView = sender.superview;
@@ -2693,40 +2657,42 @@
       }];
 }
 - (void)showPatchManager:(NSString *)title icon:(NSString *)iconName {
+  NSDictionary *colors = self.themeColors[@(self.currentTheme)];
+  
   UIView *container = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 400)];
   container.center = self.center;
-  container.backgroundColor = [UIColor colorWithRed:0.15 green:0.15 blue:0.15 alpha:1.0];
+  container.backgroundColor = colors[@"background"];
   container.layer.cornerRadius = 15;
 
   UIView *header = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 50)];
-  header.backgroundColor = [UIColor colorWithRed:0.1 green:0.1 blue:0.1 alpha:1.0];
+  header.backgroundColor = colors[@"primary"];
 
   UIImageView *iconView = [[UIImageView alloc] initWithImage:[UIImage systemImageNamed:iconName]];
-  iconView.tintColor = [UIColor whiteColor];
+  iconView.tintColor = colors[@"text"];
   iconView.frame = CGRectMake(15, 10, 30, 30);
   [header addSubview:iconView];
 
   UILabel *titleLabel = [[UILabel alloc] initWithFrame:CGRectMake(55, 10, 200, 30)];
   titleLabel.text = title;
-  titleLabel.textColor = [UIColor whiteColor];
+  titleLabel.textColor = colors[@"text"];
   titleLabel.font = [UIFont boldSystemFontOfSize:16];
   [header addSubview:titleLabel];
 
   UIButton *closeButton = [UIButton buttonWithType:UIButtonTypeSystem];
   closeButton.frame = CGRectMake(260, 10, 30, 30);
   [closeButton setImage:[UIImage systemImageNamed:@"xmark.circle.fill"] forState:UIControlStateNormal];
-  closeButton.tintColor = [UIColor whiteColor];
+  closeButton.tintColor = colors[@"text"];
   [closeButton addTarget:self action:@selector(closePatchManager:) forControlEvents:UIControlEventTouchUpInside];
   [header addSubview:closeButton];
 
   UIView *inputContainer = [[UIView alloc] initWithFrame:CGRectMake(10, 60, 280, 45)];
-  inputContainer.backgroundColor = [UIColor colorWithRed:0.1 green:0.1 blue:0.1 alpha:1.0];
+  inputContainer.backgroundColor = colors[@"secondary"];
   inputContainer.layer.cornerRadius = 12;
 
   UITextField *offsetField = [[UITextField alloc] initWithFrame:CGRectMake(10, 5, 110, 35)];
-  offsetField.backgroundColor = [UIColor colorWithRed:0.1 green:0.1 blue:0.1 alpha:1.0];
+  offsetField.backgroundColor = colors[@"secondary"];
   offsetField.placeholder = @"Offset...";
-  offsetField.textColor = [UIColor whiteColor];
+  offsetField.textColor = colors[@"text"];
   offsetField.layer.cornerRadius = 6;
   offsetField.leftView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 0)];
   offsetField.leftViewMode = UITextFieldViewModeAlways;
@@ -2734,14 +2700,14 @@
   offsetField.delegate = self;
   NSAttributedString *offsetPlaceholder = [[NSAttributedString alloc]
       initWithString:@"Offset..."
-          attributes:@{NSForegroundColorAttributeName: [UIColor colorWithWhite:0.5 alpha:1.0]}];
+          attributes:@{NSForegroundColorAttributeName: [colors[@"text"] colorWithAlphaComponent:0.5]}];
   offsetField.attributedPlaceholder = offsetPlaceholder;
   [inputContainer addSubview:offsetField];
 
   UITextField *valueField = [[UITextField alloc] initWithFrame:CGRectMake(125, 5, 85, 35)];
-  valueField.backgroundColor = [UIColor colorWithRed:0.1 green:0.1 blue:0.1 alpha:1.0];
+  valueField.backgroundColor = colors[@"secondary"];
   valueField.placeholder = @"Patch...";
-  valueField.textColor = [UIColor whiteColor];
+  valueField.textColor = colors[@"text"];
   valueField.layer.cornerRadius = 6;
   valueField.leftView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 10, 0)];
   valueField.leftViewMode = UITextFieldViewModeAlways;
@@ -2749,7 +2715,7 @@
   valueField.delegate = self;
   NSAttributedString *valuePlaceholder = [[NSAttributedString alloc]
       initWithString:@"Patch..."
-          attributes:@{NSForegroundColorAttributeName: [UIColor colorWithWhite:0.5 alpha:1.0]}];
+          attributes:@{NSForegroundColorAttributeName: [colors[@"text"] colorWithAlphaComponent:0.5]}];
   valueField.attributedPlaceholder = valuePlaceholder;
   [inputContainer addSubview:valueField];
 
@@ -2757,14 +2723,14 @@
   addButton.frame = CGRectMake(220, 5, 50, 35);
   [addButton setTitle:@"+" forState:UIControlStateNormal];
   addButton.titleLabel.font = [UIFont systemFontOfSize:16];
-  [addButton setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-  addButton.backgroundColor = [UIColor colorWithWhite:0.2 alpha:1.0];
+  [addButton setTitleColor:colors[@"text"] forState:UIControlStateNormal];
+  addButton.backgroundColor = colors[@"accent"];
   addButton.layer.cornerRadius = 6;
   [addButton addTarget:self action:@selector(handleAddPatch:) forControlEvents:UIControlEventTouchUpInside];
   [inputContainer addSubview:addButton];
 
   UIView *patchesContainer = [[UIView alloc] initWithFrame:CGRectMake(10, 115, 280, 270)];
-  patchesContainer.backgroundColor = [UIColor colorWithRed:0.1 green:0.1 blue:0.1 alpha:1.0];
+  patchesContainer.backgroundColor = colors[@"secondary"];
   patchesContainer.layer.cornerRadius = 12;
 
   UIScrollView *scrollView = [[UIScrollView alloc] initWithFrame:CGRectMake(0, 0, 280, 270)];
@@ -2840,23 +2806,29 @@
     UIView *container = addSection.superview.superview;
     UIScrollView *scrollView = (UIScrollView *)objc_getAssociatedObject(container, "patchScrollView");
 
-    for (UIView *view in scrollView.subviews) {
-        [view removeFromSuperview];
-    }
-
+    // Calculate the y position for the new patch view
     CGFloat yOffset = 10;
-    for (NSDictionary *patch in self.memoryPatches) {
-        [self addPatchView:patch toScrollView:scrollView atOffset:&yOffset];
+    if (scrollView.subviews.count > 0) {
+        UIView *lastView = [scrollView.subviews lastObject];
+        yOffset = CGRectGetMaxY(lastView.frame) + 5;
     }
-    scrollView.contentSize = CGSizeMake(300, MAX(yOffset, scrollView.frame.size.height));
-    [scrollView layoutIfNeeded];
-    [scrollView.superview layoutIfNeeded];
 
-    [scrollView setContentOffset:CGPointMake(0, scrollView.contentSize.height - scrollView.frame.size.height) animated:YES];
+    // Add only the new patch view without recreating all views
+    [self addPatchView:newPatch toScrollView:scrollView atOffset:&yOffset];
+
+    // Update scroll view content size
+    CGFloat newContentHeight = yOffset + 10;
+    scrollView.contentSize = CGSizeMake(scrollView.contentSize.width, newContentHeight);
+
+    // Scroll to show the new patch
+    CGFloat scrollOffset = newContentHeight - scrollView.bounds.size.height;
+    if (scrollOffset > 0) {
+        [scrollView setContentOffset:CGPointMake(0, scrollOffset) animated:YES];
+    }
+
     [self addDebugLog:[NSString stringWithFormat:@"Added new patch - Offset: 0x%llx, Value: %@, ASM: %@", offset, value, isAsm ? @"Yes" : @"No"]];
     [self showQuickMessage:@"Patch added!"];
 }
-
 - (BOOL)isValidAsmInstruction:(NSString *)instruction {
     NSArray *validInstructions = @[@"mov", @"add", @"sub", @"mul", @"div", @"and", @"or", @"xor", @"shl", @"shr", @"ret", @"push", @"pop", @"call", @"jmp", @"cmp", @"test", @"fmov", @"nop"];
     NSArray *components = [instruction componentsSeparatedByString:@" "];
@@ -3102,39 +3074,34 @@
     [scrollView.superview layoutIfNeeded];
 }
 - (void)addPatchView:(NSDictionary *)patch
-        toScrollView:(UIScrollView *)scrollView
-            atOffset:(CGFloat *)yOffset {
+  toScrollView:(UIScrollView *)scrollView
+      atOffset:(CGFloat *)yOffset {
+  NSDictionary *colors = self.themeColors[@(self.currentTheme)];
   UIView *patchView =
       [[UIView alloc] initWithFrame:CGRectMake(10, *yOffset, 260, 40)];
-  patchView.backgroundColor = [UIColor colorWithRed:0.15
-                                              green:0.15
-                                               blue:0.15
-                                              alpha:1.0];
+  patchView.backgroundColor = colors[@"secondary"];
   patchView.layer.cornerRadius = 8;
   UILabel *infoLabel =
       [[UILabel alloc] initWithFrame:CGRectMake(15, 10, 180, 20)];
   uint64_t offset = [patch[@"offset"] unsignedLongLongValue];
   infoLabel.text =
       [NSString stringWithFormat:@"0x%llX → %@", offset, patch[@"value"]];
-  infoLabel.textColor = [UIColor whiteColor];
+  infoLabel.textColor = colors[@"text"];
   infoLabel.font = [UIFont systemFontOfSize:14];
   [patchView addSubview:infoLabel];
   UISwitch *toggleSwitch =
       [[UISwitch alloc] initWithFrame:CGRectMake(200, 5, 51, 31)];
   toggleSwitch.transform = CGAffineTransformMakeScale(0.8, 0.8);
-  toggleSwitch.onTintColor = [UIColor colorWithRed:0.4
-                                             green:0.8
-                                              blue:1.0
-                                             alpha:1.0];
+  toggleSwitch.onTintColor = colors[@"accent"];
   toggleSwitch.on = [patch[@"enabled"] boolValue];
   [toggleSwitch addTarget:self
-                   action:@selector(patchToggled:)
-         forControlEvents:UIControlEventValueChanged];
+       action:@selector(patchToggled:)
+   forControlEvents:UIControlEventValueChanged];
   [patchView addSubview:toggleSwitch];
   UILongPressGestureRecognizer *longPress =
       [[UILongPressGestureRecognizer alloc]
-          initWithTarget:self
-                  action:@selector(handlePatchLongPress:)];
+    initWithTarget:self
+      action:@selector(handlePatchLongPress:)];
   [patchView addGestureRecognizer:longPress];
   [scrollView addSubview:patchView];
   *yOffset += 45;
@@ -3197,10 +3164,10 @@
          callback:^{
            ModMenuLayout currentLayout = weakMenu.currentLayout;
            ModMenuLayout nextLayout = static_cast<ModMenuLayout>(
-               (static_cast<int>(currentLayout) + 1) % 4);
+               (static_cast<int>(currentLayout) + 1) % 5); // Updated to 5
            [weakMenu switchTo:nextLayout animated:YES];
            NSArray *layoutNames =
-               @[ @"Radial", @"Grid", @"List", @"ElasticString" ];
+               @[ @"Radial", @"Grid", @"List", @"ElasticString", @"Spiral" ]; // Updated
            NSString *layoutName = layoutNames[nextLayout];
            [weakMenu
                addDebugLog:[NSString stringWithFormat:@"Layout changed to %@",
@@ -3239,11 +3206,12 @@
            NSString *themeName = themeNames[nextTheme];
            [weakMenu addDebugLog:[NSString stringWithFormat:@"Theme set to: %@",
                                                             themeName]];
-           [weakMenu resetPosition];
            [weakMenu
                showQuickMessage:[NSString
                                     stringWithFormat:@"Theme changed to %@",
                                                      themeName]];
+
+          [weakMenu saveSettings];
          }
       forCategory:4];
   [self addSlider:@"Menu Opacity"
@@ -3326,6 +3294,141 @@
         }];
         [self showQuickMessage:@"Patch removed!"];
     }
+}
+
+- (void)saveSettings {
+    @try {
+        NSMutableDictionary *settingsToSave = [NSMutableDictionary dictionary];
+
+        
+        settingsToSave[@"currentTheme"] = @(self.currentTheme);
+        settingsToSave[@"currentLayout"] = @(self.currentLayout);
+        
+        NSMutableDictionary *basicSettings = [NSMutableDictionary dictionary];
+        [self.settingValues enumerateKeysAndObjectsUsingBlock:^(NSString *key, id value, BOOL *stop) {
+            if (![key hasSuffix:@"_callback"] && 
+                ([value isKindOfClass:[NSNumber class]] || 
+                 [value isKindOfClass:[NSString class]] || 
+                 [value isKindOfClass:[NSArray class]])) {
+                basicSettings[key] = value;
+            }
+        }];
+        settingsToSave[@"settingValues"] = basicSettings;
+        
+        NSMutableArray *safePatches = [NSMutableArray array];
+        for (NSDictionary *patch in self.memoryPatches) {
+            NSMutableDictionary *safePatch = [NSMutableDictionary dictionary];
+            safePatch[@"offset"] = patch[@"offset"];
+            safePatch[@"value"] = patch[@"value"];
+            safePatch[@"enabled"] = patch[@"enabled"];
+            safePatch[@"withAsm"] = patch[@"withAsm"];
+            [safePatches addObject:safePatch];
+        }
+        settingsToSave[@"memoryPatches"] = safePatches;
+        
+        [[NSUserDefaults standardUserDefaults] setObject:settingsToSave forKey:@"ModMenuSettings"];
+        [[NSUserDefaults standardUserDefaults] synchronize];
+        
+        [self addDebugLog:@"Settings saved successfully"];
+    } @catch (NSException *exception) {
+        [self addDebugLog:[NSString stringWithFormat:@"Failed to save settings: %@", exception.reason]];
+    }
+}
+
+- (void)loadSettings {
+  @try {
+    NSDictionary *settings = [[NSUserDefaults standardUserDefaults] dictionaryForKey:@"ModMenuSettings"];
+    if (!settings) {
+      [self addDebugLog:@"No saved settings found"];
+      return;
+    }
+    
+    NSDictionary *savedSettings = settings[@"settingValues"];
+    if (savedSettings) {
+      NSMutableDictionary *newSettings = [NSMutableDictionary dictionary];
+      
+      [self.settingValues enumerateKeysAndObjectsUsingBlock:^(NSString *key, id value, BOOL *stop) {
+        if ([key hasSuffix:@"_callback"]) {
+          newSettings[key] = value;
+        }
+      }];
+      
+      [savedSettings enumerateKeysAndObjectsUsingBlock:^(NSString *key, id value, BOOL *stop) {
+        if (![key hasSuffix:@"_callback"]) {
+          newSettings[key] = value;
+        }
+      }];
+      
+      self.settingValues = newSettings;
+      
+      [self.categorySettings enumerateKeysAndObjectsUsingBlock:^(NSNumber *category, NSArray *settings, BOOL *stop) {
+        for (NSDictionary *setting in settings) {
+          if ([setting[@"type"] isEqualToString:@"toggle"]) {
+            NSString *title = setting[@"title"];
+            NSString *key = [self keyForSetting:title inCategory:[category integerValue]];
+            
+            if ([self.settingValues[key] boolValue] && 
+                setting[@"offsets"] && 
+                setting[@"patches"]) {
+              
+              NSArray<NSNumber *> *offsets = setting[@"offsets"];
+              NSArray<NSString *> *patches = setting[@"patches"];
+              BOOL withAsm = [setting[@"withAsm"] boolValue];
+              
+              for (NSUInteger i = 0; i < MIN(offsets.count, patches.count); i++) {
+                uint64_t offset = [offsets[i] unsignedLongLongValue];
+                NSString *patchHex = patches[i];
+                
+                if (withAsm) {
+                  [Patch offsetAsm:offset
+                          asm_arch:MP_ASM_ARM64
+                          asm_code:[patchHex UTF8String]];
+                  [self addDebugLog:[NSString stringWithFormat:@"Applied toggle ASM patch: %llx -> %s", offset, [patchHex UTF8String]]];
+                } else {
+                  [Patch offset:offset patch:patchHex];
+                  [self addDebugLog:[NSString stringWithFormat:@"Applied toggle patch: %llx -> %@", offset, patchHex]];
+                }
+              }
+            }
+          }
+        }
+      }];
+    }
+    
+    NSNumber *theme = settings[@"currentTheme"];
+    if (theme) {
+      [self setTheme:(ModMenuTheme)[theme integerValue] animated:YES];
+    }
+    
+    NSNumber *layout = settings[@"currentLayout"];
+    if (layout) {
+      [self switchTo:(ModMenuLayout)[layout integerValue] animated:YES];
+    }
+    
+    NSArray *patches = settings[@"memoryPatches"];
+    if (patches) {
+      self.memoryPatches = [patches mutableCopy];
+      for (NSDictionary *patch in patches) {
+        if ([patch[@"enabled"] boolValue]) {
+          uint64_t offset = [patch[@"offset"] unsignedLongLongValue];
+          NSString *patchHex = patch[@"value"];
+          
+          if ([patch[@"withAsm"] boolValue]) {
+            [Patch offsetAsm:offset asm_arch:MP_ASM_ARM64 asm_code:[patchHex UTF8String]];
+            [self addDebugLog:[NSString stringWithFormat:@"Applied memory ASM patch: %llx -> %@", offset, patchHex]];
+          } else {
+            [Patch offset:offset patch:patchHex];
+            [self addDebugLog:[NSString stringWithFormat:@"Applied memory patch: %llx -> %@", offset, patchHex]];
+          }
+        }
+      }
+    }
+    
+    [self addDebugLog:@"Settings loaded successfully"];
+    
+  } @catch (NSException *exception) {
+    [self addDebugLog:[NSString stringWithFormat:@"Failed to load settings: %@", exception.reason]];
+  }
 }
 
 @end
