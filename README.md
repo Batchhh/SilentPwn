@@ -1,5 +1,7 @@
 # SilentPwn 🕵️‍♂️🔓
 
+This repo has been archieved, you are free to fork it and update it!
+
 ## Overview
 SilentPwn is an advanced iOS Mod Menu framework designed for runtime manipulation and system-level interactions. Perfect for iOS application research, game modifications, and security testing.
 
@@ -75,7 +77,6 @@ Detailed documentation available in [wiki.md](https://github.com/Batchhh/SilentP
 
 ## 📜 License
 
-Distributed under the GNU General Public License v3.0.
 See `LICENSE` for more information.
 
 ## 🏆 Credits
